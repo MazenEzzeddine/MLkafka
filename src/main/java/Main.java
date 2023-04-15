@@ -38,11 +38,19 @@ public final class Main {
                         .optModelUrls("djl://ai.djl.pytorch/resnet/0.0.1/traced_resnet18")
                         .build();
 
+
+
         URL url = new URL("https://resources.djl.ai/images/kitten.jpg");
+        URL url2 = new URL("https://www.hartz.com/wp-content/uploads/2022/04/small-dog-owners-1.jpg");
+
         try (ZooModel<URL, Classifications> model = criteria.loadModel();
              Predictor<URL, Classifications> predictor = model.newPredictor()) {
             Classifications classifications = predictor.predict(url);
+            Classifications classifications2 = predictor.predict(url2);
+
             System.out.println(classifications);
+            System.out.println(classifications2);
+
         }
     }
 }
