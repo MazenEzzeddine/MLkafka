@@ -37,6 +37,11 @@ public class Consumer {
    static  ArrayList<TopicPartition> tps;
     static KafkaProducer<String, Customer> producer;
 
+    static Criteria<URL, Classifications> criteria;
+
+    static ZooModel<URL, Classifications> model;
+    static Predictor<URL, Classifications> predictor;
+
     public Consumer() throws IOException, URISyntaxException, InterruptedException {
     }
 
@@ -46,6 +51,7 @@ public class Consumer {
 
     public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException, ModelNotFoundException, MalformedModelException {
         PrometheusUtils.initPrometheus();
+        initModel();
         producer = Producer.producerFactory();
         KafkaConsumerConfig config = KafkaConsumerConfig.fromEnv();
         log.info(KafkaConsumerConfig.class.getName() + ": {}", config.toString());
@@ -73,6 +79,7 @@ public class Consumer {
         tps.add(new TopicPartition("testtopic1", 3));
         tps.add(new TopicPartition("testtopic1", 4));
 
+        long serviceStart;
         try {
             while (true) {
                 Long timeBeforePolling = System.currentTimeMillis();
@@ -83,6 +90,7 @@ public class Consumer {
                     /*  double percenttopic2 = records.records(tp).size()* 0.5;// *0.7;
                        double currentEventIndex = 0;*/
                         for (ConsumerRecord<String, Customer> record : records.records(tp)) {
+                            serviceStart = System.currentTimeMillis();
                             totalEvents++;
                             if (System.currentTimeMillis() - record.timestamp() <= 5000) {
                                 eventsNonViolating++;
@@ -94,7 +102,12 @@ public class Consumer {
                                 //Thread.sleep(Long.parseLong(config.getSleep()));
                                 mldetect();
                                 PrometheusUtils.latencygaugemeasure.setDuration(System.currentTimeMillis() - record.timestamp());
-                                PrometheusUtils.timer.record(Duration.ofMillis(System.currentTimeMillis() - record.timestamp()));
+
+                               PrometheusUtils.servicelatencygaugemeasure.setDuration(System.currentTimeMillis() - serviceStart);
+
+                            PrometheusUtils.timer.record(Duration.ofMillis(System.currentTimeMillis() - record.timestamp()));
+
+
 
 
                            /*  if (currentEventIndex < percenttopic2) {
@@ -144,7 +157,7 @@ public class Consumer {
                 }
             }
 
-        } catch (WakeupException e) {
+        } catch (WakeupException | TranslateException e) {
             // e.printStackTrace();
         } finally {
             consumer.close();
@@ -153,9 +166,8 @@ public class Consumer {
     }
 
 
-
-    private static void mldetect() throws IOException, ModelNotFoundException, MalformedModelException {
-        Criteria<URL, Classifications> criteria =
+    private static void initModel() throws ModelNotFoundException, MalformedModelException, IOException {
+         criteria =
                 Criteria.builder()
                         .setTypes(URL.class, Classifications.class)
                         .optProgress(new ProgressBar())
@@ -164,20 +176,31 @@ public class Consumer {
                         .build();
 
 
-        URL url = new URL("https://resources.djl.ai/images/kitten.jpg");
+
+             model = criteria.loadModel();
+             predictor = model.newPredictor();
+    }
+
+
+
+    private static void mldetect() throws IOException, ModelNotFoundException, MalformedModelException, TranslateException {
+
+
+       // URL url = new URL("https://resources.djl.ai/images/kitten.jpg");
         URL url2 = new URL("https://www.hartz.com/wp-content/uploads/2022/04/small-dog-owners-1.jpg");
 
-        try (ZooModel<URL, Classifications> model = criteria.loadModel();
-             Predictor<URL, Classifications> predictor = model.newPredictor()) {
+
+/*
             Classifications classifications = predictor.predict(url);
+*/
             Classifications classifications2 = predictor.predict(url2);
 
+/*
             System.out.println(classifications);
+*/
             System.out.println(classifications2);
 
-        } catch (TranslateException e) {
-            e.printStackTrace();
-        }
+
     }
 
 

@@ -15,6 +15,10 @@ public class PrometheusUtils {
     public static Timer timer;
 
 
+    public static TimeMeasure servicelatencygaugemeasure;
+    public static Gauge servicelatencygauge;
+
+
     public static void initPrometheus() {
         prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         try {
@@ -44,7 +48,10 @@ public class PrometheusUtils {
 
 
         latencygaugemeasure = new TimeMeasure(0.0);
+       servicelatencygaugemeasure = new TimeMeasure(0.0);
+
         latencygauge = Gauge.builder("latencygauge",  latencygaugemeasure, TimeMeasure::getDuration).register(prometheusRegistry);//prometheusRegistry.gauge("timergauge" );
+        servicelatencygauge = Gauge.builder("servicelatencygauge",  servicelatencygaugemeasure, TimeMeasure::getDuration).register(prometheusRegistry);//prometheusRegistry.gauge("timergauge" );
 
         //latencygauge = Gauge.builder("latencygauge",  latencygaugemeasure, TimeMeasure::getDuration).tag("child", "testtopic1").register(prometheusRegistry);
         //prometheusRegistry.gauge("timergauge" );
