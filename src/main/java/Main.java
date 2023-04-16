@@ -1,3 +1,4 @@
+/*
 import ai.djl.Application;
 import ai.djl.MalformedModelException;
 import ai.djl.inference.Predictor;
@@ -54,3 +55,4 @@ public final class Main {
         }
     }
 }
+*/
